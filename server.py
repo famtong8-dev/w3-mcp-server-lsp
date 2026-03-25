@@ -77,6 +77,7 @@ class LSPInput(BaseModel):
         return v.strip()
 
 
+
 def format_location(location: dict) -> str:
     """Format location dict as readable string."""
     if not location:
@@ -92,6 +93,18 @@ def format_location(location: dict) -> str:
     name="lsp_goto_definition",
     annotations={
         "title": "Go to Definition",
+        "description": """Jump to symbol definition location.
+
+🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
+
+❌ WRONG: Editor shows "Ln 5, Col 10" → DON'T use {"line": 5, "character": 10}
+✅ CORRECT: Use {"line": 4, "character": 9} (subtract 1 from editor values)
+
+CHARACTER COUNTING (0-indexed):
+"const greeting = "Hello";" → 'c'=0, 'o'=1, 'g'=6, 'H'=18
+
+Return format: "file:line:column" or "Definition not found"
+""",
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
@@ -101,28 +114,33 @@ def format_location(location: dict) -> str:
 async def lsp_goto_definition(params: LSPInput, ctx: Context) -> str:
     """Jump to symbol definition location.
 
-    ⚠️ CRITICAL: Line and character numbers are 0-INDEXED (start from 0, not 1).
+    🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
 
-    HOW TO CONVERT FROM EDITOR TO LSP FORMAT:
-    - If editor shows "Ln 5, Col 10" → use line: 4, character: 9
-    - Formula: lsp_value = editor_value - 1
+    ❌ WRONG (what editor displays):
+      Editor shows: "Ln 5, Col 10"
+      ❌ DON'T use: {"line": 5, "character": 10}
 
-    CHARACTER POSITION (0-indexed within line):
-    Example line: const greeting = "Hello";
-    - Character at 'c' in const → character: 0
-    - Character at 'o' in const → character: 1
-    - Character at 'g' in greeting → character: 6
-    - Character at 'H' in string → character: 18
+    ✅ CORRECT (0-indexed):
+      ✅ DO use: {"line": 4, "character": 9}
+      Formula: lsp_value = editor_value - 1
+
+    CHARACTER COUNTING (0-indexed from start of line):
+      Line: "const greeting = "Hello";"
+      Index: 0123456789...
+      • 'c' in const → character: 0
+      • 'o' in const → character: 1
+      • 'g' in greeting → character: 6
+      • 'H' in string → character: 18
 
     Args:
-        params (LSPInput): File path (relative to project root), line (0-indexed), character (0-indexed)
+        params (LSPInput): Must provide line and character as 0-indexed values
 
     Returns:
-        str: Location of definition in format "file:line:column" or "Definition not found"
+        str: "file:line:column" or "Definition not found"
 
     Example:
-        Input: {"file_path": "src/app.ts", "line": 4, "character": 9}
-        Output: "/path/to/src/app.ts:15:5"
+        ✅ {"file_path": "src/app.ts", "line": 4, "character": 9}
+        → "/path/src/app.ts:15:5"
     """
     try:
         lsp = lsp_client
@@ -145,6 +163,18 @@ async def lsp_goto_definition(params: LSPInput, ctx: Context) -> str:
     name="lsp_hover",
     annotations={
         "title": "Hover Information",
+        "description": """Get type information and documentation for symbol at position.
+
+🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
+
+❌ WRONG: Editor shows "Ln 5, Col 10" → DON'T use {"line": 5, "character": 10}
+✅ CORRECT: Use {"line": 4, "character": 9} (subtract 1 from editor values)
+
+CHARACTER COUNTING (0-indexed):
+"const greeting = "Hello";" → 'c'=0, 'o'=1, 'g'=6, 'H'=18
+
+Return: Type signature like "(parameter) name: string" or "No info available"
+""",
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
@@ -154,28 +184,33 @@ async def lsp_goto_definition(params: LSPInput, ctx: Context) -> str:
 async def lsp_hover(params: LSPInput, ctx: Context) -> str:
     """Get type information and documentation for symbol at position.
 
-    ⚠️ CRITICAL: Line and character numbers are 0-INDEXED (start from 0, not 1).
+    🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
 
-    HOW TO CONVERT FROM EDITOR TO LSP FORMAT:
-    - If editor shows "Ln 5, Col 10" → use line: 4, character: 9
-    - Formula: lsp_value = editor_value - 1
+    ❌ WRONG (what editor displays):
+      Editor shows: "Ln 5, Col 10"
+      ❌ DON'T use: {"line": 5, "character": 10}
 
-    CHARACTER POSITION (0-indexed within line):
-    Example line: const greeting = "Hello";
-    - Character at 'c' in const → character: 0
-    - Character at 'o' in const → character: 1
-    - Character at 'g' in greeting → character: 6
-    - Character at 'H' in string → character: 18
+    ✅ CORRECT (0-indexed):
+      ✅ DO use: {"line": 4, "character": 9}
+      Formula: lsp_value = editor_value - 1
+
+    CHARACTER COUNTING (0-indexed from start of line):
+      Line: "const greeting = "Hello";"
+      Index: 0123456789...
+      • 'c' in const → character: 0
+      • 'o' in const → character: 1
+      • 'g' in greeting → character: 6
+      • 'H' in string → character: 18
 
     Args:
-        params (LSPInput): File path (relative to project root), line (0-indexed), character (0-indexed)
+        params (LSPInput): Must provide line and character as 0-indexed values
 
     Returns:
-        str: Type signature and documentation string, or "No info available"
+        str: Type signature like "(parameter) name: string" or "No info available"
 
     Example:
-        Input: {"file_path": "src/app.ts", "line": 4, "character": 9}
-        Output: "(parameter) greeting: string"
+        ✅ {"file_path": "src/app.ts", "line": 4, "character": 9}
+        → "(parameter) greeting: string"
     """
     try:
         lsp = lsp_client
@@ -201,6 +236,18 @@ async def lsp_hover(params: LSPInput, ctx: Context) -> str:
     name="lsp_find_references",
     annotations={
         "title": "Find References",
+        "description": """Find all usages/references of symbol at position.
+
+🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
+
+❌ WRONG: Editor shows "Ln 5, Col 10" → DON'T use {"line": 5, "character": 10}
+✅ CORRECT: Use {"line": 4, "character": 9} (subtract 1 from editor values)
+
+CHARACTER COUNTING (0-indexed):
+"const greeting = "Hello";" → 'c'=0, 'o'=1, 'g'=6, 'H'=18
+
+Return: "Found N references: file:line:column ..." or "No references found"
+""",
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
@@ -210,28 +257,33 @@ async def lsp_hover(params: LSPInput, ctx: Context) -> str:
 async def lsp_find_references(params: LSPInput, ctx: Context) -> str:
     """Find all usages/references of symbol at position.
 
-    ⚠️ CRITICAL: Line and character numbers are 0-INDEXED (start from 0, not 1).
+    🔴 CRITICAL: Line and character are STRICTLY 0-INDEXED (0, 1, 2...), NOT 1-indexed!
 
-    HOW TO CONVERT FROM EDITOR TO LSP FORMAT:
-    - If editor shows "Ln 5, Col 10" → use line: 4, character: 9
-    - Formula: lsp_value = editor_value - 1
+    ❌ WRONG (what editor displays):
+      Editor shows: "Ln 5, Col 10"
+      ❌ DON'T use: {"line": 5, "character": 10}
 
-    CHARACTER POSITION (0-indexed within line):
-    Example line: const greeting = "Hello";
-    - Character at 'c' in const → character: 0
-    - Character at 'o' in const → character: 1
-    - Character at 'g' in greeting → character: 6
-    - Character at 'H' in string → character: 18
+    ✅ CORRECT (0-indexed):
+      ✅ DO use: {"line": 4, "character": 9}
+      Formula: lsp_value = editor_value - 1
+
+    CHARACTER COUNTING (0-indexed from start of line):
+      Line: "const greeting = "Hello";"
+      Index: 0123456789...
+      • 'c' in const → character: 0
+      • 'o' in const → character: 1
+      • 'g' in greeting → character: 6
+      • 'H' in string → character: 18
 
     Args:
-        params (LSPInput): File path (relative to project root), line (0-indexed), character (0-indexed)
+        params (LSPInput): Must provide line and character as 0-indexed values
 
     Returns:
-        str: List of all references in format "Found N references:\nfile:line:column\n..."
+        str: "Found N references:\nfile:line:column\n..." or "No references found"
 
     Example:
-        Input: {"file_path": "src/app.ts", "line": 4, "character": 9}
-        Output: "Found 2 references:\n/path/to/src/app.ts:5:9\n/path/to/src/utils.ts:10:2"
+        ✅ {"file_path": "src/app.ts", "line": 4, "character": 9}
+        → "Found 2 references:\n/path/src/app.ts:5:9\n/path/src/utils.ts:10:2"
     """
     try:
         lsp = lsp_client
