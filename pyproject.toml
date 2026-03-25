@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "w3-mcp-server-lsp"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server wrapping TypeScript Language Server for JavaScript/TypeScript"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-w3-mcp-lsp = "server:main"
+w3-mcp-server-lsp = "server:main"
 
 [tool.setuptools]
 py-modules = ["server", "lsp_client"]

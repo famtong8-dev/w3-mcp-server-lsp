@@ -100,14 +100,50 @@ uv run python server.py
 
 ### Option C: Claude Code Integration
 
-Edit `.claude/settings.json`:
+#### Method 1: From PyPI (Recommended)
+
+Install from PyPI:
+
+```bash
+pip install w3-mcp-server-lsp
+# or
+uv pip install w3-mcp-server-lsp
+```
+
+Edit `~/.claude/claude_config.json` or `~/.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "w3-lsp": {
+      "type": "stdio",
       "command": "uv",
-      "args": ["run", "mcp", "dev", "server.py"],
+      "args": ["run", "--with", "w3-mcp-server-lsp", "w3-mcp-server-lsp"],
+      "env": {
+        "PROJECT_ROOT": "/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+**Advantages:**
+
+- ✅ No need to clone the repo
+- ✅ Easy version management
+- ✅ Automatic dependency isolation
+
+#### Method 2: From Local Source
+
+Edit `~/.claude/claude_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "w3-lsp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "server.py"],
       "cwd": "/path/to/w3-mcp-server-lsp",
       "env": {
         "PROJECT_ROOT": "/path/to/your/project"
@@ -118,8 +154,6 @@ Edit `.claude/settings.json`:
 ```
 
 Then restart Claude Code.
-
-**Note:** Make sure to run `uv pip install 'mcp[cli]'` first for the `mcp dev` command to work.
 
 ## Tools Documentation
 
@@ -212,6 +246,7 @@ Specifies the root directory of your project. Files paths in tool calls are rela
    ```
 
 3. **In .claude/settings.json:**
+
    ```json
    "env": {
      "PROJECT_ROOT": "/path/to/your/project"
