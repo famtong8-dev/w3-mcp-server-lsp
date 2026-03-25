@@ -157,6 +157,43 @@ Then restart Claude Code.
 
 ## Tools Documentation
 
+### ⚠️ IMPORTANT: 0-Indexed Line and Character Numbers
+
+All tools use **0-indexed** positioning (start from 0, not 1):
+
+| Editor Display | Tool Input | Formula                      |
+| -------------- | ---------- | ---------------------------- |
+| Ln 5, Col 10   | line: 4    | lsp_value = editor_value - 1 |
+| Ln 1, Col 1    | line: 0    | character: 0                 |
+| Ln 10, Col 5   | line: 9    | character: 4                 |
+
+**Quick Reference:**
+
+- Line 1 in editor = `line: 0` in tool
+- Column 1 in editor = `character: 0` in tool
+
+**How to Calculate Character Position:**
+
+Given this code line:
+
+```javascript
+const greeting = "Hello";
+0123456789...
+```
+
+- Position at `c` in `const` → `character: 0`
+- Position at `o` in `const` → `character: 1`
+- Position at `g` in `greeting` → `character: 6`
+- Position at `H` in `"Hello"` → `character: 18`
+
+**In VSCode:**
+
+- Click on a character
+- Look at status bar: `Ln X, Col Y`
+- Use: `line: X-1, character: Y-1`
+
+---
+
 ### lsp_goto_definition
 
 Jump to definition of symbol at specified position.

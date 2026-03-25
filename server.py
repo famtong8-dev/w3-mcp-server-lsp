@@ -32,23 +32,40 @@ mcp = FastMCP("w3-lsp", lifespan=app_lifespan)
 
 
 class LSPInput(BaseModel):
-    """Input for LSP operations."""
+    """Input for LSP operations.
+
+    IMPORTANT: Line and character are 0-indexed (start from 0, not 1).
+
+    Line conversion:
+    - Editor shows: Ln 5
+    - Use in tool: line: 4
+    - Formula: lsp_line = editor_line - 1
+
+    Character conversion (0-indexed within each line):
+    - Example: const greeting = "Hello";
+    - Position at 'c' in const → character: 0
+    - Position at 'o' in const → character: 1
+    - Position at 'g' in greeting → character: 6
+    - Position at 'H' in "Hello" → character: 18
+    - Editor shows: Col 10 → Use: character: 9
+    - Formula: lsp_char = editor_col - 1
+    """
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
     file_path: str = Field(
         ...,
-        description="Path to JavaScript/TypeScript file (relative to project root)",
+        description="Path to JavaScript/TypeScript file (relative to project root). Example: 'src/app.ts' or 'index.js'",
         min_length=1,
         max_length=500,
     )
     line: int = Field(
         ...,
-        description="Line number (0-indexed)",
+        description="Line number (0-indexed). If editor shows Ln 5, use line: 4",
         ge=0,
     )
     character: int = Field(
         ...,
-        description="Character position (0-indexed)",
+        description="Character position in line (0-indexed). Count from start: 'const' has character 0,1,2,3,4. If editor shows Col 10, use character: 9",
         ge=0,
     )
 
@@ -82,13 +99,18 @@ def format_location(location: dict) -> str:
     },
 )
 async def lsp_goto_definition(params: LSPInput, ctx: Context) -> str:
-    """Go to definition of symbol at position.
+    """Jump to symbol definition location.
+
+    Line and character numbers are 0-indexed. See LSPInput for conversion details.
 
     Args:
-        params (LSPInput): File path, line, and character position
+        params (LSPInput): File path, line, and character position (both 0-indexed)
 
     Returns:
-        str: Location of definition or error message
+        str: Location of definition (file:line:column) or "Definition not found"
+
+    Example:
+        {"file_path": "src/app.ts", "line": 4, "character": 9}
     """
     try:
         lsp = lsp_client
@@ -118,13 +140,18 @@ async def lsp_goto_definition(params: LSPInput, ctx: Context) -> str:
     },
 )
 async def lsp_hover(params: LSPInput, ctx: Context) -> str:
-    """Get type and documentation info for symbol.
+    """Get type information and documentation for symbol at position.
+
+    Line and character numbers are 0-indexed. See LSPInput for conversion details.
 
     Args:
-        params (LSPInput): File path, line, and character position
+        params (LSPInput): File path, line, and character position (both 0-indexed)
 
     Returns:
-        str: Type info and documentation or error message
+        str: Type signature, documentation, or "No info available"
+
+    Example:
+        {"file_path": "src/app.ts", "line": 4, "character": 9}
     """
     try:
         lsp = lsp_client
@@ -157,13 +184,18 @@ async def lsp_hover(params: LSPInput, ctx: Context) -> str:
     },
 )
 async def lsp_find_references(params: LSPInput, ctx: Context) -> str:
-    """Find all references to symbol.
+    """Find all usages/references of symbol at position.
+
+    Line and character numbers are 0-indexed. See LSPInput for conversion details.
 
     Args:
-        params (LSPInput): File path, line, and character position
+        params (LSPInput): File path, line, and character position (both 0-indexed)
 
     Returns:
-        str: List of references or error message
+        str: List of all references found (file:line:column), or "No references found"
+
+    Example:
+        {"file_path": "src/app.ts", "line": 4, "character": 9}
     """
     try:
         lsp = lsp_client
